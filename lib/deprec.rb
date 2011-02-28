@@ -42,6 +42,7 @@ Capistrano::Configuration.instance.deprec.namespaces.keys.each do |ns_name|
   unless ns.respond_to?(:check_roles)
     Capistrano::Configuration.instance.namespace :deprec do
       namespace ns_name do
+        desc "check if all roles are defined for :#{ns_name}"
         task :check_roles do
           user_defined_roles = roles.keys
           recipe_declared_roles = Capistrano::Configuration.instance.deprec.send(ns_name).tasks.collect { |k,v| v.options.has_key?(:roles) ? v.options[:roles] : nil }.compact.flatten.uniq
@@ -56,25 +57,24 @@ Capistrano::Configuration.instance.deprec.namespaces.keys.each do |ns_name|
   unless ns.respond_to?(:diff_config)
     Capistrano::Configuration.instance.namespace :deprec do
       namespace ns_name do
+        desc "perform local/remote diff on project configs for :#{ns_name}"
         task :diff_config_project do
-          return unless defined?(PROJECT_CONFIG_FILES) && PROJECT_CONFIG_FILES[ns_name]
-          
           PROJECT_CONFIG_FILES[ns_name].each do |config_file|
-            deprec2.compare_files(ns_name, config_file[:template], config_file[:path])
-          end
+            deprec2.compare_files(ns_name, config_file[:path], config_file[:path])
+          end if defined?(PROJECT_CONFIG_FILES) && PROJECT_CONFIG_FILES[ns_name]
         end
 
+        desc "perform local/remote diff on system configs for :#{ns_name}"
         task :diff_config_system do
-          return unless defined?(SYSTEM_CONFIG_FILES) && SYSTEM_CONFIG_FILES[ns_name]
-
           SYSTEM_CONFIG_FILES[ns_name].each do |config_file|
-            deprec2.compare_files(ns_name, config_file[:template], config_file[:path])
-          end
+            deprec2.compare_files(ns_name, config_file[:path], config_file[:path])
+          end if defined?(SYSTEM_CONFIG_FILES) && SYSTEM_CONFIG_FILES[ns_name]
         end
 
+        desc "perform local/remote diff on all configs for :#{ns_name}"
         task :diff_config do
-          diff_config_project
           diff_config_system
+          diff_config_project
         end
       end
     end

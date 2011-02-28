@@ -35,17 +35,24 @@ module Deprec2
 
   def compare_files(app, local_file, remote_file)
     stage = exists?(:stage) ? fetch(:stage).to_s : ''
-
-    run "cat #{remote_file}" do |channel, stream, data|
-      local_file_full_path = local_file[0,1] == "/" ? local_file : 
-        (File.exists?(File.join('config', stage, channel.properties[:host], app.to_s, local_file)) ? File.join('config', stage, channel.properties[:host], app.to_s, local_file) : File.join('config', stage, app.to_s, local_file))    
-      tmp_file = File.join('/', 'tmp', "#{(channel.properties[:host] + remote_file).gsub(/\/\./, '_')}_#{Time.now.strftime("%Y%m%d%H%M%S")}.tmp")
-      File.open(tmp_file, "w") do |f|
-        f.write data
-      end
-      puts `diff #{local_file} #{tmp_file}`
+    tmpdir = "/tmp/#{Time.now.strftime("%Y%m%d%H%M%S")}.deprec"
+    
+    FileUtils.mkdir_p(tmpdir)
+    begin
+      download(remote_file, File.join(tmpdir, "$CAPISTRANO:HOST$#{remote_file.gsub(/[\/\.]/, '_')}.tmp"), { :via => :scp, :silent => true })
+    rescue Exception
+      # ignore errors, it just means the file doesn't exist on a specific server. This can be the case if the file only
+      # gets uploaded to servers with a specific role for example.
+    end
+    Dir.new(tmpdir).entries.collect { |e| File.file?(File.join(tmpdir, e)) ? File.join(tmpdir, e) : nil }.compact.each do |tmp_file|
+      hostname = File.basename(tmp_file).split(/_/).first
+      local_file_full_path = (File.exists?(File.join('config', stage, hostname, app.to_s, local_file)) ?
+                              File.join('config', stage, hostname, app.to_s, local_file) :
+                              File.join('config', stage, app.to_s, local_file))
+      puts `diff -u #{local_file_full_path} #{tmp_file}`
       FileUtils.rm_f(tmp_file)
     end
+    FileUtils.rmdir(tmpdir)
   end
 
   # Render template (usually a config file) 
