@@ -127,7 +127,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
     end
     
-    task :diff_config do
+    desc "compare configs for the current stage for all defined roles"
+    task :diff_configs do
       top.deprec.namespaces.keys.each do |ns_name|
         ns = top.deprec.send(ns_name)
         recipe_declared_roles = ns.tasks.collect { |k,v| v.options.has_key?(:roles) ? v.options[:roles] : nil }.compact.flatten.uniq
