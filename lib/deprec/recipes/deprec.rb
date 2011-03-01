@@ -126,6 +126,16 @@ Capistrano::Configuration.instance(:must_exist).load do
         end
       end
     end
+    
+    task :diff_config do
+      top.deprec.namespaces.keys.each do |ns_name|
+        ns = top.deprec.send(ns_name)
+        recipe_declared_roles = ns.tasks.collect { |k,v| v.options.has_key?(:roles) ? v.options[:roles] : nil }.compact.flatten.uniq
+        if recipe_declared_roles.any? { |role| self.roles.keys.include?(role) } && !Dir["config/#{stage}/**/#{ns_name}"].empty?
+          ns.send(:diff_config)
+        end
+      end
+    end
 
     task :dump do
       require 'yaml'

@@ -42,7 +42,7 @@ module Deprec2
       local_file_full_path = (File.exists?(File.join('config', stage, hostname, app.to_s, local_file)) ?
                               File.join('config', stage, hostname, app.to_s, local_file) :
                               File.join('config', stage, app.to_s, local_file))
-      puts `diff -u #{local_file_full_path} #{tmp_file}`
+      puts `diff -u #{local_file_full_path} #{tmp_file}` if File.exists?(local_file_full_path)
       FileUtils.rm_f(tmp_file)
     end
     FileUtils.rmdir(tmpdir)
