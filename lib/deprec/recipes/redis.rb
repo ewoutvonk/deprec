@@ -42,9 +42,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       DESC
       task :config_gen do
         redis_ports.each do |port|
+          set :redis_port, port
           SYSTEM_CONFIG_FILES[:redis].each do |file|
             file_settings = file.dup
-            file_settings[:path].gsub!(/@@PORT@@/, port)
+            file_settings[:path].gsub!(/@@PORT@@/, port.to_s)
             deprec2.render_template(:redis, file_settings)
           end
         end
@@ -55,7 +56,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         redis_ports.each do |port|
           SYSTEM_CONFIG_FILES[:redis].each do |file|
             file_settings = file.dup
-            file_settings[:path].gsub!(/@@PORT@@/, port)
+            file_settings[:path].gsub!(/@@PORT@@/, port.to_s)
             deprec2.push_configs(:redis, [file_settings])
           end
         end
