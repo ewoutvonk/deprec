@@ -5,10 +5,11 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       set :redis_user, 'redis'
       set :redis_group, 'redis'
+      set :redis_ports, [6379]
       
       SRC_PACKAGES[:redis] = {
-        :md5sum => '7799de79f36ebdb73bcb8f09816d1ac3  redis-2.0.3.tar.gz',
-        :url => "http://redis.googlecode.com/files/redis-2.0.3.tar.gz",
+        :md5sum => '1c5b0d961da84a8f9b44a328b438549e  redis-2.2.2.tar.gz',
+        :url => "http://redis.googlecode.com/files/redis-2.2.2.tar.gz",
         :configure => nil,
       }
       
@@ -22,12 +23,12 @@ Capistrano::Configuration.instance(:must_exist).load do
       SYSTEM_CONFIG_FILES[:redis] = [
         
         {:template => "redis-init.erb",
-         :path => '/etc/init.d/redis',
+         :path => '/etc/init.d/redis_@@PORT@@',
          :mode => 0755,
          :owner => 'root:root'},
 
         {:template => "redis-conf.erb",
-         :path => '/etc/redis/redis.conf',
+         :path => '/etc/redis/redis_@@PORT@@.conf',
          :mode => 0755,
          :owner => 'root:root'}
         
@@ -40,14 +41,24 @@ Capistrano::Configuration.instance(:must_exist).load do
       The can be pushed to the server with the :config task.
       DESC
       task :config_gen do
-        SYSTEM_CONFIG_FILES[:redis].each do |file|
-          deprec2.render_template(:redis, file)
+        redis_ports.each do |port|
+          SYSTEM_CONFIG_FILES[:redis].each do |file|
+            file_settings = file.dup
+            file_settings[:path].gsub!(/@@PORT@@/, port)
+            deprec2.render_template(:redis, file_settings)
+          end
         end
       end
 
       desc "Push redis config files to server"
       task :config, :roles => :redis do
-        deprec2.push_configs(:redis, SYSTEM_CONFIG_FILES[:redis])
+        redis_ports.each do |port|
+          SYSTEM_CONFIG_FILES[:redis].each do |file|
+            file_settings = file.dup
+            file_settings[:path].gsub!(/@@PORT@@/, port)
+            deprec2.push_configs(:redis, [file_settings])
+          end
+        end
       end
 
       task :create_redis_user, :roles => :redis do
