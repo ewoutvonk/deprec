@@ -5,7 +5,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       set :redis_user, 'redis'
       set :redis_group, 'redis'
-      set :redis_ports, [6379]
+      set :redis_ports, "6379" # comma separated list of ports
       
       SRC_PACKAGES[:redis] = {
         :md5sum => '1c5b0d961da84a8f9b44a328b438549e  redis-2.2.2.tar.gz',
@@ -41,7 +41,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       The can be pushed to the server with the :config task.
       DESC
       task :config_gen do
-        redis_ports.each do |port|
+        (ENV['PORTS'] || redis_ports).split(/,/).each do |port|
           set :redis_port, port
           SYSTEM_CONFIG_FILES[:redis].each do |file|
             file_settings = file.dup
@@ -53,7 +53,7 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       desc "Push redis config files to server"
       task :config, :roles => :redis do
-        redis_ports.each do |port|
+        (ENV['PORTS'] || redis_ports).split(/,/).each do |port|
           SYSTEM_CONFIG_FILES[:redis].each do |file|
             file_settings = file.dup
             file_settings[:path].gsub!(/@@PORT@@/, port.to_s)
@@ -69,27 +69,45 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       desc "Start Redis"
       task :start, :roles => :redis do
-        send(run_method, "/etc/init.d/redis start")
+        (ENV['PORTS'] || redis_ports).split(/,/).each do |port|
+          send(run_method, "/etc/init.d/redis_#{port} start")
+        end
       end
 
       desc "Stop Redis"
       task :stop, :roles => :redis do
-        send(run_method, "/etc/init.d/redis stop")
+        (ENV['PORTS'] || redis_ports).split(/,/).each do |port|
+          send(run_method, "/etc/init.d/redis_#{port} stop")
+        end
       end
 
       desc "Restart Redis"
       task :restart, :roles => :redis do
-        send(run_method, "/etc/init.d/redis restart")
+        (ENV['PORTS'] || redis_ports).split(/,/).each do |port|
+          send(run_method, "/etc/init.d/redis_#{port} restart")
+        end
       end
 
       desc "Set Redis to start on boot"
       task :activate, :roles => :redis do
-        send(run_method, "update-rc.d redis defaults")
+        (ENV['PORTS'] || redis_ports).split(/,/).each do |port|
+          send(run_method, "update-rc.d redis_#{port} defaults")
+        end
       end
       
       desc "Set Redis to not start on boot"
       task :deactivate, :roles => :redis do
-        send(run_method, "update-rc.d -f redis remove")
+        (ENV['PORTS'] || redis_ports).split(/,/).each do |port|
+          send(run_method, "update-rc.d -f redis_#{port} remove")
+        end
+      end
+
+      desc "Clean out old redis configs and init files"
+      task :cleanup, :roles => :redis do
+        sudo "/etc/init.d/redis stop"
+        sudo "rm -f /etc/init.d/redis"
+        sudo "mv /etc/redis/redis.conf /etc/redis/redis.conf.deprecated"
+        sudo "update-rc.d -f redis remove"
       end
       
     end 
