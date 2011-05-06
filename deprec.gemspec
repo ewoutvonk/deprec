@@ -2,7 +2,7 @@ require 'rubygems'
 
 SPEC = Gem::Specification.new do |s|
   s.name = 'le1t0-deprec'
-  s.version = '2.1.6.078'
+  s.version = '2.1.6.079'
   
   s.authors = ['Le1t0']
   s.description = <<-EOF
@@ -21,6 +21,5 @@ SPEC = Gem::Specification.new do |s|
   s.files = candidates.delete_if do |item| 
     item.include?("CVS") || item.include?("rdoc") 
   end
-  s.default_executable = "depify"
   s.executables = ["depify"]
 end
