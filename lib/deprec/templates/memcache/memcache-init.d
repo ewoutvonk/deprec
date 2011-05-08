@@ -32,6 +32,8 @@ start () {
 
 stop () {
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE --exec $DAEMON
+		sleep 1
+		kill $(cat $PIDFILE)
     rm -f $PIDFILE
 }
 
