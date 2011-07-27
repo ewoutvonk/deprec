@@ -58,10 +58,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       ]
   
       task :install, :roles => :memcached do
-        version = 'memcached-1.4.5'
+        version = 'memcached-1.4.6'
         set :src_package, {
           :file => version + '.tar.gz',   
-          :md5sum => '583441a25f937360624024f2881e5ea8  memcached-1.4.5.tar.gz', 
+          :md5sum => '243e5d82de27e6e45caf0ebfd400e41a  memcached-1.4.6.tar.gz', 
           :dir => version,  
           :url => "http://memcached.googlecode.com/files/#{version}.tar.gz",
           :unpack => "tar zxf #{version}.tar.gz;",
