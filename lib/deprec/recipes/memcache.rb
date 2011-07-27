@@ -76,7 +76,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         apt.install( {:base => %w(libevent-dev)}, :stable )
         deprec2.download_src(src_package, src_dir)
         deprec2.install_from_src(src_package, src_dir)
-        sudo "mkdir /var/run/memcached"
+        sudo "mkdir -p /var/run/memcached"
         sudo "chown #{memcache_run_as} /var/run/memcached" if memcache_run_as
       end
   
