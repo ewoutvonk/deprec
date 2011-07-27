@@ -90,7 +90,6 @@ Capistrano::Configuration.instance(:must_exist).load do
       desc "Push memcached config files (system & project level) to server"
       task :config, :roles => :memcached do
         deprec2.push_configs(:memcache, SYSTEM_CONFIG_FILES[:memcache])
-        reload
       end
 
       desc "Start memcached"
