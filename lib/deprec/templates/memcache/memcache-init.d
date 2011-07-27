@@ -20,7 +20,7 @@ arguments = [ [ "-d", "-P $PIDFILE" ], boolean_arguments, value_arguments ].flat
 DAEMON=/usr/local/bin/memcached
 NAME=memcached
 DESC=memcached
-PIDFILE=/var/run/$NAME.pid
+PIDFILE=/var/run/memcached/$NAME.pid
 
 test -x $DAEMON || exit 0
 
