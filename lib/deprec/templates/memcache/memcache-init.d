@@ -33,7 +33,7 @@ start () {
 stop () {
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE --exec $DAEMON
 		sleep 1
-		killall $DAEMON
+		killall -q $DAEMON || true
     rm -f $PIDFILE
 }
 
