@@ -22,6 +22,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       set :glusterfs_defaults, { }
       set :glusterfs_exports, { }
+      set :glusterfs_client_config_local, false
             
       SRC_PACKAGES[:glusterfs] = {
         :md5sum => "e2eaf3d1e7a735ee7e7b262a46bbc75d  glusterfs-3.0.4.tar.gz", 
@@ -51,7 +52,18 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       desc "Generate configuration file(s) for Glusterfs from template(s)"
       task :config_gen do
-        SYSTEM_CONFIG_FILES[:glusterfs].each do |file|
+        system_config_files = SYSTEM_CONFIG_FILES[:glusterfs].dup
+        if glusterfs_client_config_local
+          glusterfs_exports.each do |name, cfg|
+            system_config_files << {
+              :template => "glusterfs.vol.erb",
+              :path => "/etc/glusterfs/#{name}-#{cfg[:transport] || glusterfs_defaults[:transport] || 'tcp'}.vol",
+              :mode => 0644,
+              :owner => 'root:root'
+            }
+          end
+        end
+        system_config_files.each do |file|
           deprec2.render_template(:glusterfs, file)
         end
       end
@@ -65,9 +77,22 @@ Capistrano::Configuration.instance(:must_exist).load do
       desc "Create glusterfs client config files on server"
       task :config_client, :roles => :storage_client do
         sudo "mkdir -p /etc/glusterfs 2>/dev/null || exit 0"
-        glusterfs_generate_volfiles(glusterfs_exports, glusterfs_defaults) do |temp_dir, name, cfg|
-          sudo "mkdir -p #{cfg[:mount_dir] || glusterfs_defaults[:mount_dir]}"
-          sudo "mv #{temp_dir}/#{name}-#{cfg[:transport] || glusterfs_defaults[:transport] || 'tcp'}.vol /etc/glusterfs/"
+        if glusterfs_client_config_local
+          system_config_files = [] # we can start empty, as we don't need the init file on the clients
+          glusterfs_exports.each do |name, cfg|
+            system_config_files << {
+              :template => "glusterfs.vol.erb",
+              :path => "/etc/glusterfs/#{name}-#{cfg[:transport] || glusterfs_defaults[:transport] || 'tcp'}.vol",
+              :mode => 0644,
+              :owner => 'root:root'
+            }
+          end
+          deprec2.push_configs(:glusterfs, system_config_files)
+        else
+          glusterfs_generate_volfiles(glusterfs_exports, glusterfs_defaults) do |temp_dir, name, cfg|
+            sudo "mkdir -p #{cfg[:mount_dir] || glusterfs_defaults[:mount_dir]}"
+            sudo "mv #{temp_dir}/#{name}-#{cfg[:transport] || glusterfs_defaults[:transport] || 'tcp'}.vol /etc/glusterfs/"
+          end
         end
       end
 
